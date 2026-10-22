@@ -565,7 +565,13 @@ function playIntro(){
   el.classList.remove("out"); el.hidden = false;
   try { vid.currentTime = 0; } catch(e){}
   const p = vid.play();
-  if (p && p.catch) p.catch(() => {}); // autoplay blocked → first tap skips to Home
+  if (p && p.catch) p.catch(() => {                // sound refused (some TV browsers) → play muted instead
+    vid.muted = true; $("btnSound").textContent = "🔇"; $("btnSound").setAttribute("aria-pressed","false");
+    vid.play().catch(() => {});
+  });
+  // Safety net for TV browsers: if the video still isn't playing after 4 s, go on to Home instead of a black screen
+  clearTimeout(window._introGuard);
+  window._introGuard = setTimeout(() => { if (!introDone && (vid.paused || vid.readyState < 2)) endIntro(); }, 4000);
 }
 function endIntro(){
   if (introDone) return; introDone = true;
