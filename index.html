@@ -132,6 +132,10 @@ button:focus-visible{outline:3px solid var(--btn);outline-offset:3px}
 .done .count{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-size:.9rem}
 .restart{color:var(--ink-soft);font-weight:700;padding:8px 14px;border-radius:999px;font-size:.95rem}
 
+/* Black start screen (shown before everything) */
+.blank{position:absolute;inset:0;z-index:30;width:100%;height:100%;background:#000;border:0;cursor:pointer}
+.blank:focus-visible{outline:none}
+
 /* Intro video (plays before Home) */
 .intro{position:absolute;inset:0;z-index:20;background:#1b120c;display:flex;align-items:center;justify-content:center;cursor:pointer;animation:fade .3s ease both}
 .intro video{width:100%;height:100%;object-fit:cover;display:block}
@@ -168,6 +172,9 @@ button:focus-visible{outline:3px solid var(--btn);outline-offset:3px}
 
 <div class="app" id="app">
   <div class="bed"></div>
+
+  <!-- 00 Black start screen: tap anywhere to begin -->
+  <button class="blank" id="blank" aria-label="Start"></button>
 
   <!-- 0 Intro video -->
   <div class="intro" id="intro" aria-label="Intro">
@@ -516,8 +523,8 @@ function show(name){
 }
 
 /* Kiosk: return to Home after 60s of no touch (except on Home) */
-/* Kiosk: 10 s with no touch on any screen → back to the intro video */
-const IDLE_MS = 10000;
+/* Kiosk: 100 s with no touch on any screen → back to the intro video */
+const IDLE_MS = 100000;
 const IDLE_SCREENS = ["home","garden"];   // no timer from the questions onward
 function armIdle(name){
   clearTimeout(idleTimer);
@@ -533,8 +540,21 @@ function reset(){
   answers = []; qi = 0; result = null; doneAct = null;
   $("actPick").hidden = false; $("actDone").hidden = true; $("btnRestart").hidden = false;
   show("home");
-  playIntro();
+  playIntro();          // after the first start, always come back to the intro video
 }
+
+/* ---------- Black start screen → tap → intro video (with sound) ---------- */
+function showBlank(){
+  clearTimeout(idleTimer); introDone = false;
+  try { vid.pause(); } catch(e){}
+  $("blank").hidden = false;
+}
+$("blank").addEventListener("click", () => {
+  $("blank").hidden = true;
+  vid.muted = false;                       // the tap allows sound
+  $("btnSound").textContent = "🔊"; $("btnSound").setAttribute("aria-pressed", "true");
+  playIntro();
+});
 
 /* ---------- Intro video: plays first, then reveals Home ---------- */
 const vid = $("introVid");
@@ -692,7 +712,7 @@ $("btnAgain").onclick = reset;
 $("btnRestart").onclick = reset;
 
 setLang(lang);
-playIntro();
+showBlank();
 </script>
 
 </body>
